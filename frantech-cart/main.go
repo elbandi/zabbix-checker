@@ -1,9 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/Elbandi/zabbix-checker/common/lld"
 	"github.com/antchfx/htmlquery"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/net/html"
@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -33,13 +34,17 @@ func fetchPage(url string) (*html.Node, error) {
 	return html.Parse(r)
 }
 
-func getAvailable(n *html.Node) string {
+func getAvailable(n *html.Node) int {
 	if n == nil {
-		return "99"
+		return 99
 	}
 	s := htmlquery.InnerText(n)
 	s = strings.TrimSpace(strings.ReplaceAll(s, "Available", ""))
-	return s
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		return -1
+	}
+	return i
 }
 
 func init() {
@@ -48,6 +53,11 @@ func init() {
 		Aliases: []string{"V"},
 		Usage:   "print only the version",
 	}
+}
+
+type Product struct {
+	Id           string `json:"id"`
+	Availability int    `json:"availability"`
 }
 
 func main() {
@@ -86,7 +96,7 @@ func actFetch(context *cli.Context) error {
 	if len(list) < 1 {
 		return errors.New("Error fetch produts")
 	}
-	d := make(lld.DiscoveryData, 0)
+	output := make([]Product, 0)
 	for _, pack := range list {
 		//		log.Println("-----")
 		//		log.Println(htmlquery.OutputHTML(pack, true))
@@ -99,11 +109,15 @@ func actFetch(context *cli.Context) error {
 		if err != nil {
 			continue
 		}
-		item := make(lld.DiscoveryItem, 0)
-		item["ID"] = name
-		item["AVAILABILITY"] = getAvailable(availNode)
-		d = append(d, item)
+		output = append(output, Product{
+			Id:           name,
+			Availability: getAvailable(availNode),
+		})
 	}
-	fmt.Println(d.JsonLine())
+	b, err := json.Marshal(output)
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(b))
 	return nil
 }
