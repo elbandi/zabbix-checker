@@ -371,19 +371,20 @@ zabbix_export:
           key: 'lvm.lvs.discovery[thin-pool]'
           delay: '0'
           filter:
+            evaltype: AND
             conditions:
               - macro: '{#LV_FULL_NAME}'
-                value: '^{$LVM.LV.PVNAME.MATCHES}/'
+                value: '^{$LVM.THINPOOL.PVNAME.MATCHES}/'
                 formulaid: A
               - macro: '{#LV_FULL_NAME}'
-                value: '^{$LVM.LV.PVNAME.NOT_MATCHES}/'
+                value: '^{$LVM.THINPOOL.PVNAME.NOT_MATCHES}/'
                 operator: NOT_MATCHES_REGEX
                 formulaid: B
               - macro: '{#LV_NAME}'
-                value: '{$LVM.LV.LVNAME.MATCHES}'
+                value: '{$LVM.THINPOOL.LVNAME.MATCHES}'
                 formulaid: C
               - macro: '{#LV_NAME}'
-                value: '{$LVM.LV.LVNAME.NOT_MATCHES}'
+                value: '{$LVM.THINPOOL.LVNAME.NOT_MATCHES}'
                 operator: NOT_MATCHES_REGEX
                 formulaid: D
               - macro: '{#LV_TYPE}'
@@ -925,13 +926,28 @@ zabbix_export:
           key: 'lvm.lvs.discovery[thin]'
           delay: '0'
           filter:
+            evaltype: AND
             conditions:
+              - macro: '{#LV_FULL_NAME}'
+                value: '^{$LVM.THIN.PVNAME.MATCHES}/'
+                formulaid: A
+              - macro: '{#LV_FULL_NAME}'
+                value: '^{$LVM.THIN.PVNAME.NOT_MATCHES}/'
+                operator: NOT_MATCHES_REGEX
+                formulaid: B
+              - macro: '{#LV_NAME}'
+                value: '{$LVM.THIN.LVNAME.MATCHES}'
+                formulaid: C
+              - macro: '{#LV_NAME}'
+                value: '{$LVM.THIN.LVNAME.NOT_MATCHES}'
+                operator: NOT_MATCHES_REGEX
+                formulaid: D
               - macro: '{#LV_ROLE}'
                 value: '^public(,origin.*)?$'
-                formulaid: A
+                formulaid: E
               - macro: '{#LV_TYPE}'
                 value: ^thin$
-                formulaid: B
+                formulaid: F
           lifetime: 7d
           description: 'Low-Level discovery of thin LVM logical volumes (LV)'
           item_prototypes:
@@ -1431,12 +1447,6 @@ zabbix_export:
             - lld_macro: '{#VG_NAME}'
               path: $.vg_name
       macros:
-        - macro: '{$LVM.LV.LVNAME.MATCHES}'
-          value: '^.*$'
-          description: 'Used for lvm discovery. Can be overridden on the host or linked template level.'
-        - macro: '{$LVM.LV.LVNAME.NOT_MATCHES}'
-          value: CHANGE_IF_NEEDED
-          description: 'Used in lvm discovery. Can be overridden on the host or linked template level if you need to filter out results.'
         - macro: '{$LVM.LV.META.FREE.CRIT}'
           value: 3G
         - macro: '{$LVM.LV.META.FREE.WARN}'
@@ -1453,12 +1463,6 @@ zabbix_export:
           value: '5'
         - macro: '{$LVM.LV.POOL.PFREE.WARN}'
           value: '10'
-        - macro: '{$LVM.LV.PVNAME.MATCHES}'
-          value: '.*'
-          description: 'Used for lvm discovery. Can be overridden on the host or linked template level.'
-        - macro: '{$LVM.LV.PVNAME.NOT_MATCHES}'
-          value: CHANGE_IF_NEEDED
-          description: 'Used in lvm discovery. Can be overridden on the host or linked template level if you need to filter out results.'
         - macro: '{$LVM.LV.SNAPSHOT.FREE.CRIT}'
           value: 100G
         - macro: '{$LVM.LV.SNAPSHOT.FREE.WARN}'
@@ -1467,3 +1471,27 @@ zabbix_export:
           value: '5'
         - macro: '{$LVM.LV.SNAPSHOT.PFREE.WARN}'
           value: '10'
+        - macro: '{$LVM.THIN.LVNAME.MATCHES}'
+          value: '^.*$'
+          description: 'Used for lvm discovery. Can be overridden on the host or linked template level.'
+        - macro: '{$LVM.THIN.LVNAME.NOT_MATCHES}'
+          value: CHANGE_IF_NEEDED
+          description: 'Used in lvm discovery. Can be overridden on the host or linked template level if you need to filter out results.'
+        - macro: '{$LVM.THIN.PVNAME.MATCHES}'
+          value: '.*'
+          description: 'Used for lvm discovery. Can be overridden on the host or linked template level.'
+        - macro: '{$LVM.THIN.PVNAME.NOT_MATCHES}'
+          value: CHANGE_IF_NEEDED
+          description: 'Used in lvm discovery. Can be overridden on the host or linked template level if you need to filter out results.'
+        - macro: '{$LVM.THINPOOL.LVNAME.MATCHES}'
+          value: '^.*$'
+          description: 'Used for lvm discovery. Can be overridden on the host or linked template level.'
+        - macro: '{$LVM.THINPOOL.LVNAME.NOT_MATCHES}'
+          value: CHANGE_IF_NEEDED
+          description: 'Used in lvm discovery. Can be overridden on the host or linked template level if you need to filter out results.'
+        - macro: '{$LVM.THINPOOL.PVNAME.MATCHES}'
+          value: '.*'
+          description: 'Used for lvm discovery. Can be overridden on the host or linked template level.'
+        - macro: '{$LVM.THINPOOL.PVNAME.NOT_MATCHES}'
+          value: CHANGE_IF_NEEDED
+          description: 'Used in lvm discovery. Can be overridden on the host or linked template level if you need to filter out results.'
