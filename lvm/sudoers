@@ -1,0 +1,25 @@
+##
+## Defaults specification for the zabbix user
+##
+Defaults:zabbix !requiretty
+
+##
+## Command alias specifications for Linux Logical Volume Management (LVM)
+##
+Cmnd_Alias ZBX_LVM_PVS = /sbin/pvs
+Cmnd_Alias ZBX_LVM_VGS = /sbin/vgs
+Cmnd_Alias ZBX_LVM_LVS = /sbin/lvs
+
+##
+## Disable logging for LVM sudo calls
+##
+Defaults!ZBX_LVM_PVS !syslog
+Defaults!ZBX_LVM_VGS !syslog
+Defaults!ZBX_LVM_LVS !syslog
+
+##
+## User privilege specifications for the zabbix user
+##
+zabbix ALL=NOPASSWD: ZBX_LVM_LVS
+zabbix ALL=NOPASSWD: ZBX_LVM_VGS
+zabbix ALL=NOPASSWD: ZBX_LVM_PVS

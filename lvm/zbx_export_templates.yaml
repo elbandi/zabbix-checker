@@ -1,0 +1,1469 @@
+zabbix_export:
+  version: '6.0'
+  date: '2026-03-29T18:24:06Z'
+  groups:
+    - uuid: e97cb72ba31f4d61b266e07d8d85301f
+      name: 'App templates'
+  templates:
+    - uuid: 4ef764730bd24121b2b0da083c5548b1
+      template: 'Template App LVM active'
+      name: 'Template App LVM active'
+      description: 'Application template for monitoring Linux Logical Volumen Management (LVM)'
+      groups:
+        - name: 'App templates'
+      items:
+        - uuid: 7fb75f175b784433ba11b44a1971be57
+          name: 'LVS: Get data'
+          key: lvm.lvs
+          delay: 15m
+          trends: '0'
+          value_type: CHAR
+          tags:
+            - tag: component
+              value: raw
+        - uuid: cb8aed2db1b54b7a804990151a5ea129
+          name: 'PVS: Get data'
+          key: lvm.pvs
+          delay: 15m
+          trends: '0'
+          value_type: CHAR
+          tags:
+            - tag: component
+              value: raw
+        - uuid: 9e01da8e433f43dbb0de6256409a219b
+          name: 'VGS: Get data'
+          key: lvm.vgs
+          delay: 15m
+          trends: '0'
+          value_type: CHAR
+          tags:
+            - tag: component
+              value: raw
+      discovery_rules:
+        - uuid: 7c700b4443704e578ec8b89dd553dedc
+          name: 'LVM logical linear volumes discovery'
+          type: DEPENDENT
+          key: 'lvm.lvs.discovery[linear]'
+          delay: '0'
+          filter:
+            evaltype: AND
+            conditions:
+              - macro: '{#LV_ROLE}'
+                value: '^public(,origin.*)?$'
+                formulaid: A
+              - macro: '{#LV_TYPE}'
+                value: ^linear$
+                formulaid: B
+          lifetime: 7d
+          description: 'Low-Level discovery of linear LVM logical volumes (LV)'
+          item_prototypes:
+            - uuid: 2404e567e2be4227893d2c11f55c86e2
+              name: '{#LV_FULL_NAME}: Active state'
+              type: DEPENDENT
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},lv_active,linear]'
+              delay: '0'
+              trends: '0'
+              value_type: CHAR
+              description: 'Active state of an linear LVM logical volume (LV).'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.lv_full_name=="{#LV_FULL_NAME}")].lv_active.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: lvm.lvs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+              trigger_prototypes:
+                - uuid: e7e7a2fb44dd4c72a2f3fffe1eb5ecad
+                  expression: 'find(/Template App LVM active/lvm.lvs.value[{#LV_FULL_NAME},lv_active,linear],,"like","active")=0'
+                  name: 'LVM linear LV {#LV_FULL_NAME} is not active'
+                  opdata: 'Current state: {ITEM.LASTVALUE1}'
+                  priority: HIGH
+                  description: 'The linear LVM logical volume is not in state "active", which is most likely a sign of a problem.'
+            - uuid: b58e8cc990f7434b9a233c2ccc07e3d8
+              name: '{#LV_FULL_NAME}: Size'
+              type: DEPENDENT
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},lv_size,linear]'
+              delay: '0'
+              units: B
+              description: 'The size of a linear LVM logical volume (LV).'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.lv_full_name=="{#LV_FULL_NAME}")].lv_size.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: lvm.lvs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+          master_item:
+            key: lvm.lvs
+          lld_macro_paths:
+            - lld_macro: '{#LV_FULL_NAME}'
+              path: $.lv_full_name
+            - lld_macro: '{#LV_NAME}'
+              path: $.lv_name
+            - lld_macro: '{#LV_ROLE}'
+              path: $.lv_role
+            - lld_macro: '{#LV_TYPE}'
+              path: $.segtype
+        - uuid: adc5443e6e6645919b6423b12510ddcc
+          name: 'LVM logical thick snapshot volumes discovery'
+          type: DEPENDENT
+          key: 'lvm.lvs.discovery[thicksnapshot]'
+          delay: '0'
+          filter:
+            evaltype: AND
+            conditions:
+              - macro: '{#LV_ROLE}'
+                value: thicksnapshot
+                formulaid: A
+          lifetime: '0'
+          description: 'Low-Level discovery of a thick provisioned snapshot LVM logical volumes (LV)'
+          item_prototypes:
+            - uuid: d96a68451146496385fdd44027bffbe6
+              name: '{#LV_FULL_NAME}: Active state'
+              type: DEPENDENT
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},lv_active,thicksnapshot]'
+              delay: '0'
+              trends: '0'
+              value_type: CHAR
+              description: 'Active state of a thick provisioned LVM snapshot.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.lv_full_name=="{#LV_FULL_NAME}")].lv_active.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: lvm.lvs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+              trigger_prototypes:
+                - uuid: 0bd318d7737645fcaf0fcbf4d2b62634
+                  expression: 'find(/Template App LVM active/lvm.lvs.value[{#LV_FULL_NAME},lv_active,thicksnapshot],,"like","active")=0'
+                  name: 'LVM thick snapshot LV {#LV_FULL_NAME} is not active'
+                  opdata: 'Current state: {ITEM.LASTVALUE1}'
+                  priority: HIGH
+                  description: 'The thick provisioned LVM snapshot is not in state "active", which is most likely a sign of a problem.'
+            - uuid: 9522c0392ba043bb9a56bd219bdb35b0
+              name: '{#LV_FULL_NAME}: Size'
+              type: DEPENDENT
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},lv_size,thicksnapshot]'
+              delay: '0'
+              units: B
+              description: 'The size of a thick provisioned snapshot LVM logical volume (LV).'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.lv_full_name=="{#LV_FULL_NAME}")].lv_size.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: lvm.lvs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+            - uuid: eb83132c0bb9447292724778d5c4de08
+              name: '{#LV_FULL_NAME}: Origin'
+              type: DEPENDENT
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},origin,thicksnapshot]'
+              delay: '0'
+              history: 7d
+              trends: '0'
+              value_type: CHAR
+              description: 'Origin device of a thick provisioned LVM snapshot.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.lv_full_name=="{#LV_FULL_NAME}")].origin.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: lvm.lvs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+            - uuid: 48106d33d632454d9df272a15580a1bf
+              name: '{#LV_FULL_NAME}: Free snapshot data'
+              type: CALCULATED
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},snap_free,thicksnapshot]'
+              delay: '30'
+              units: B
+              params: 'last(//lvm.lvs.value[{#LV_FULL_NAME},lv_size,thicksnapshot]) - last(//lvm.lvs.value[{#LV_FULL_NAME},snap_used,thicksnapshot])'
+              description: 'The free snapshot data of a thick provisioned LVM snapshot in bytes.'
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+            - uuid: e8fe1ab06fa344639c2fd016cfc7daf3
+              name: '{#LV_FULL_NAME}: Free snapshot data in %'
+              type: CALCULATED
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},snap_free_percent,thicksnapshot]'
+              delay: '30'
+              value_type: FLOAT
+              params: '100 - last(//lvm.lvs.value[{#LV_FULL_NAME},snap_percent,thicksnapshot])'
+              description: 'The percentage of free snapshot data of a thick provisioned LVM snapshot.'
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+            - uuid: ebb2049c84ed4389aecf2ce40e974fd5
+              name: '{#LV_FULL_NAME}: Allocated snapshot data in %'
+              type: DEPENDENT
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},snap_percent,thicksnapshot]'
+              delay: '0'
+              value_type: FLOAT
+              description: 'The percentage of allocated snapshot data of a thick provisioned LVM snapshot in bytes.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.lv_full_name=="{#LV_FULL_NAME}")].snap_percent.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: lvm.lvs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+            - uuid: 0d03ed8a7c504932a846474e07716649
+              name: '{#LV_FULL_NAME}: Allocated snapshot data'
+              type: CALCULATED
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},snap_used,thicksnapshot]'
+              delay: '30'
+              units: B
+              params: 'last(//lvm.lvs.value[{#LV_FULL_NAME},lv_size,thicksnapshot]) / 100 * last(//lvm.lvs.value[{#LV_FULL_NAME},snap_percent,thicksnapshot])'
+              description: 'The allocated snapshot data of a thick provisioned LVM snapshot in bytes.'
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+          trigger_prototypes:
+            - uuid: 461b48f2ac3841baa65984a8a1e3b97a
+              expression: |
+                last(/Template App LVM active/lvm.lvs.value[{#LV_FULL_NAME},snap_free,thicksnapshot]) < {$LVM.LV.SNAPSHOT.FREE.WARN:"{#LV_FULL_NAME}"}
+                
+                and
+                
+                last(/Template App LVM active/lvm.lvs.value[{#LV_FULL_NAME},snap_percent,thicksnapshot]) < {$LVM.LV.SNAPSHOT.PFREE.WARN:"{#LV_FULL_NAME}"}
+              name: 'LVM thick snapshot allocation {HOST.NAME}:[{#LV_FULL_NAME} is high (< $2 %, {ITEM.VALUE1} free)'
+              priority: WARNING
+              description: 'The free snapshot data of the LVM thick provisioned snapshot is below `{$LVM.LV.SNAPSHOT.FREE.WARN:"{#LV_FULL_NAME}"}` and `{$LVM.LV.SNAPSHOT.PFREE.WARN:"{#LV_FULL_NAME}"}` percent. The snapshot will turn invalid soon.'
+              dependencies:
+                - name: 'LVM thick snapshot allocation {HOST.NAME}:[{#LV_FULL_NAME} is very high (< $2 %, {ITEM.VALUE1} free)'
+                  expression: |
+                    last(/Template App LVM active/lvm.lvs.value[{#LV_FULL_NAME},snap_free,thicksnapshot]) < {$LVM.LV.SNAPSHOT.FREE.CRIT:"{#LV_FULL_NAME}"}
+                    
+                    and
+                    
+                    last(/Template App LVM active/lvm.lvs.value[{#LV_FULL_NAME},snap_percent,thicksnapshot]) < {$LVM.LV.SNAPSHOT.PFREE.CRIT:"{#LV_FULL_NAME}"}
+            - uuid: e16264acd1af40318d81d97e99abf8ec
+              expression: |
+                last(/Template App LVM active/lvm.lvs.value[{#LV_FULL_NAME},snap_free,thicksnapshot]) < {$LVM.LV.SNAPSHOT.FREE.CRIT:"{#LV_FULL_NAME}"}
+                
+                and
+                
+                last(/Template App LVM active/lvm.lvs.value[{#LV_FULL_NAME},snap_percent,thicksnapshot]) < {$LVM.LV.SNAPSHOT.PFREE.CRIT:"{#LV_FULL_NAME}"}
+              name: 'LVM thick snapshot allocation {HOST.NAME}:[{#LV_FULL_NAME} is very high (< $2 %, {ITEM.VALUE1} free)'
+              priority: HIGH
+              description: 'The free snapshot data of the LVM thick provisioned snapshot is below `{$LVM.LV.SNAPSHOT.FREE.CRIT:"{#LV_FULL_NAME}"}` and `{$LVM.LV.SNAPSHOT.PFREE.CRIT:"{#LV_FULL_NAME}"}` percent. The snapshot will turn invalid very soon.'
+          graph_prototypes:
+            - uuid: ca5f43cb451b4597a3de7311b962b2ba
+              name: 'LVM usage of thick provisioned snapshot LV {#LV_FULL_NAME}'
+              graph_items:
+                - color: C80000
+                  item:
+                    host: 'Template App LVM active'
+                    key: 'lvm.lvs.value[{#LV_FULL_NAME},lv_size,thicksnapshot]'
+                - sortorder: '1'
+                  color: 00C800
+                  item:
+                    host: 'Template App LVM active'
+                    key: 'lvm.lvs.value[{#LV_FULL_NAME},snap_free,thicksnapshot]'
+                - sortorder: '2'
+                  color: 2774A4
+                  item:
+                    host: 'Template App LVM active'
+                    key: 'lvm.lvs.value[{#LV_FULL_NAME},snap_used,thicksnapshot]'
+            - uuid: 68584e25c178437683f77b306e61ee33
+              name: 'LVM usage of thick provisioned snapshot LV {#LV_FULL_NAME} in %'
+              graph_items:
+                - color: 00C800
+                  item:
+                    host: 'Template App LVM active'
+                    key: 'lvm.lvs.value[{#LV_FULL_NAME},snap_free_percent,thicksnapshot]'
+                - sortorder: '1'
+                  color: 2774A4
+                  item:
+                    host: 'Template App LVM active'
+                    key: 'lvm.lvs.value[{#LV_FULL_NAME},snap_percent,thicksnapshot]'
+          master_item:
+            key: lvm.lvs
+          lld_macro_paths:
+            - lld_macro: '{#LV_FULL_NAME}'
+              path: $.lv_full_name
+            - lld_macro: '{#LV_NAME}'
+              path: $.lv_name
+            - lld_macro: '{#LV_ROLE}'
+              path: $.lv_role
+            - lld_macro: '{#LV_TYPE}'
+              path: $.segtype
+        - uuid: 62c6a52446714226a9631605b8f38f8a
+          name: 'LVM logical thin-pool volumes discovery'
+          type: DEPENDENT
+          key: 'lvm.lvs.discovery[thin-pool]'
+          delay: '0'
+          filter:
+            conditions:
+              - macro: '{#LV_FULL_NAME}'
+                value: '^{$LVM.LV.PVNAME.MATCHES}/'
+                formulaid: A
+              - macro: '{#LV_FULL_NAME}'
+                value: '^{$LVM.LV.PVNAME.NOT_MATCHES}/'
+                operator: NOT_MATCHES_REGEX
+                formulaid: B
+              - macro: '{#LV_NAME}'
+                value: '{$LVM.LV.LVNAME.MATCHES}'
+                formulaid: C
+              - macro: '{#LV_NAME}'
+                value: '{$LVM.LV.LVNAME.NOT_MATCHES}'
+                operator: NOT_MATCHES_REGEX
+                formulaid: D
+              - macro: '{#LV_TYPE}'
+                value: ^thin-pool$
+                formulaid: E
+          lifetime: 7d
+          description: 'Low-Level discovery of thin-pool LVM logical volumes (LV)'
+          item_prototypes:
+            - uuid: de76b40e4a3e454a810fb16948a40257
+              name: '{#LV_FULL_NAME}: Free pool data'
+              type: CALCULATED
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},data_free,thin-pool]'
+              delay: '300'
+              units: B
+              params: 'last(//lvm.lvs.value[{#LV_FULL_NAME},lv_size,thin-pool]) - last(//lvm.lvs.value[{#LV_FULL_NAME},data_used,thin-pool])'
+              description: 'The free pool data of a thin-pool LVM logical volume (LV) in bytes.'
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+            - uuid: dbe798e8319f4a7893d866569e288af2
+              name: '{#LV_FULL_NAME}: Free pool data in %'
+              type: CALCULATED
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},data_free_percent,thin-pool]'
+              delay: '300'
+              value_type: FLOAT
+              params: '100 - last(//lvm.lvs.value[{#LV_FULL_NAME},data_percent,thin-pool])'
+              description: 'The percentage of free pool data of a thin-pool LVM logical volume (LV).'
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+            - uuid: 04bc4c0e0c4b4cb497c4eb2c46bee2b4
+              name: '{#LV_FULL_NAME}: Allocated pool data in %'
+              type: DEPENDENT
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},data_percent,thin-pool]'
+              delay: '0'
+              value_type: FLOAT
+              description: 'The percentage of allocated data of a thin-pool LVM logical volume (LV).'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.lv_full_name=="{#LV_FULL_NAME}")].data_percent.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: lvm.lvs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+            - uuid: 496ea79f298544538c623a410e2c2ba4
+              name: '{#LV_FULL_NAME}: Allocated pool data'
+              type: CALCULATED
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},data_used,thin-pool]'
+              delay: '300'
+              units: B
+              params: 'last(//lvm.lvs.value[{#LV_FULL_NAME},lv_size,thin-pool]) / 100 * last(//lvm.lvs.value[{#LV_FULL_NAME},data_percent,thin-pool])'
+              description: 'The allocated pool data of a thin-pool LVM logical volume (LV) in bytes.'
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+            - uuid: 7092cab5c9e94963bcd05d46d78295e0
+              name: '{#LV_FULL_NAME}: Active state'
+              type: DEPENDENT
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},lv_active,thin-pool]'
+              delay: '0'
+              trends: '0'
+              value_type: CHAR
+              description: 'Active state of a thin-pool LVM logical volume (LV).'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.lv_full_name=="{#LV_FULL_NAME}")].lv_active.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: lvm.lvs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+              trigger_prototypes:
+                - uuid: d65a060cfb4444389ff647aa0fee3364
+                  expression: 'find(/Template App LVM active/lvm.lvs.value[{#LV_FULL_NAME},lv_active,thin-pool],,"like","active")=0'
+                  name: 'LVM thin-pool LV {#LV_FULL_NAME} is not active'
+                  priority: HIGH
+                  description: 'The thin-pool LVM logical volume is not in state "active", which is most likely a sign of a problem.'
+            - uuid: e153dd4bdd7d4d249ebdf71d36195012
+              name: '{#LV_FULL_NAME}: Metadata size'
+              type: DEPENDENT
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},lv_metadata_size,thin-pool]'
+              delay: '0'
+              units: B
+              description: 'The size of the LV that holds the metadata of a thin-pool LVM logical volume (LV).'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.lv_full_name=="{#LV_FULL_NAME}")].lv_metadata_size.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: lvm.lvs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+            - uuid: 3e6888990d414d9e85e02153047d40f9
+              name: '{#LV_FULL_NAME}: Total Size'
+              type: DEPENDENT
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},lv_size,thin-pool]'
+              delay: '0'
+              units: B
+              description: 'The size of a thin-pool LVM logical volume (LV).'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.lv_full_name=="{#LV_FULL_NAME}")].lv_size.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: lvm.lvs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+            - uuid: 6150d912fca842a2a58819a158dbe57f
+              name: '{#LV_FULL_NAME}: Full behavior'
+              type: DEPENDENT
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},lv_when_full,thin-pool]'
+              delay: '0'
+              history: 7d
+              trends: '0'
+              value_type: CHAR
+              description: 'The behaviour of thin-pool LVM logical volume (LV) when full.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.lv_full_name=="{#LV_FULL_NAME}")].lv_when_full.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: lvm.lvs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+            - uuid: e85b6ce257384cc3abfe138c114d2791
+              name: '{#LV_FULL_NAME}: Free meta data'
+              type: CALCULATED
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},metadata_free,thin-pool]'
+              delay: '300'
+              units: B
+              params: 'last(//lvm.lvs.value[{#LV_FULL_NAME},lv_metadata_size,thin-pool]) - last(//lvm.lvs.value[{#LV_FULL_NAME},metadata_used,thin-pool])'
+              description: 'The free meta data of a thin-pool LVM logical volume (LV) in bytes.'
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+            - uuid: fa3fae020c1c43d8be3366cf6e41531b
+              name: '{#LV_FULL_NAME}: Free meta data in %'
+              type: CALCULATED
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},metadata_free_percent,thin-pool]'
+              delay: '300'
+              value_type: FLOAT
+              params: '100 - last(//lvm.lvs.value[{#LV_FULL_NAME},metadata_percent,thin-pool])'
+              description: 'The percentage of free metadata of a thin-pool LVM logical volume (LV).'
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+            - uuid: 60ccf1749d104028ac1196f966478a33
+              name: '{#LV_FULL_NAME}: Allocated meta data in %'
+              type: DEPENDENT
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},metadata_percent,thin-pool]'
+              delay: '0'
+              value_type: FLOAT
+              description: 'The percentage of allocated metadata of a thin-pool LVM logical volume (LV).'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.lv_full_name=="{#LV_FULL_NAME}")].metadata_percent.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: lvm.lvs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+            - uuid: 7d976712e0d34b039c5f19eec73a6c05
+              name: '{#LV_FULL_NAME}: Allocated meta data'
+              type: CALCULATED
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},metadata_used,thin-pool]'
+              delay: '300'
+              units: B
+              params: 'last(//lvm.lvs.value[{#LV_FULL_NAME},lv_metadata_size,thin-pool]) / 100 * last(//lvm.lvs.value[{#LV_FULL_NAME},metadata_percent,thin-pool])'
+              description: 'The allocated meta data of a thin-pool LVM logical volume (LV) in bytes.'
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+            - uuid: 2ff2c333f92b4593a1e3c1998f0eba49
+              name: '{#LV_FULL_NAME}: Number of thin volumes'
+              type: DEPENDENT
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},thin_count,thin-pool]'
+              delay: '0'
+              description: 'The number of thin volumes in this pool.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.lv_full_name=="{#LV_FULL_NAME}")].thin_count.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: lvm.lvs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+          trigger_prototypes:
+            - uuid: 3c2430ad398148b0a68a43ade787fe28
+              expression: |
+                last(/Template App LVM active/lvm.lvs.value[{#LV_FULL_NAME},metadata_free,thin-pool]) < {$LVM.LV.META.FREE.WARN:"{#LV_FULL_NAME}"} 
+                
+                and
+                
+                last(/Template App LVM active/lvm.lvs.value[{#LV_FULL_NAME},metadata_free_percent,thin-pool]) < {$LVM.LV.META.PFREE.WARN:"{#LV_FULL_NAME}"}
+              name: 'LVM thin-pool free meta data on {HOST.NAME}:[{#LV_FULL_NAME} is low (< $2 %, {ITEM.VALUE1} free)'
+              priority: WARNING
+              description: 'The free meta data of the LVM thin-pool is below `{$LVM.LV.META.FREE.WARN:"{#LV_FULL_NAME}"} ` and `{$LVM.LV.META.PFREE.WARN:"{#LV_FULL_NAME}"}` percent.'
+              dependencies:
+                - name: 'LVM thin-pool free meta data on {HOST.NAME}:[{#LV_FULL_NAME} is very low (< $2 %, {ITEM.VALUE1} free)'
+                  expression: |
+                    last(/Template App LVM active/lvm.lvs.value[{#LV_FULL_NAME},metadata_free,thin-pool]) < {$LVM.LV.META.FREE.CRIT:"{#LV_FULL_NAME}"} 
+                    
+                    and
+                    
+                    last(/Template App LVM active/lvm.lvs.value[{#LV_FULL_NAME},metadata_free_percent,thin-pool]) < {$LVM.LV.META.PFREE.CRIT:"{#LV_FULL_NAME}"}
+            - uuid: 903544ac196347b19abc7ed03de054aa
+              expression: |
+                last(/Template App LVM active/lvm.lvs.value[{#LV_FULL_NAME},metadata_free,thin-pool]) < {$LVM.LV.META.FREE.CRIT:"{#LV_FULL_NAME}"} 
+                
+                and
+                
+                last(/Template App LVM active/lvm.lvs.value[{#LV_FULL_NAME},metadata_free_percent,thin-pool]) < {$LVM.LV.META.PFREE.CRIT:"{#LV_FULL_NAME}"}
+              name: 'LVM thin-pool free meta data on {HOST.NAME}:[{#LV_FULL_NAME} is very low (< $2 %, {ITEM.VALUE1} free)'
+              priority: HIGH
+              description: 'The free meta data of the LVM thin-pool is below `{$LVM.LV.META.FREE.CRIT:"{#LV_FULL_NAME}"} ` and `{$LVM.LV.META.PFREE.CRIT:"{#LV_FULL_NAME}"}` percent.'
+            - uuid: 34f069c5bcf2449d9e6e1f94b6c8a49a
+              expression: |
+                last(/Template App LVM active/lvm.lvs.value[{#LV_FULL_NAME},data_free,thin-pool]) < {$LVM.LV.POOL.FREE.WARN:"{#LV_FULL_NAME}"} 
+                
+                and
+                
+                last(/Template App LVM active/lvm.lvs.value[{#LV_FULL_NAME},data_free_percent,thin-pool]) < {$LVM.LV.POOL.PFREE.WARN:"{#LV_FULL_NAME}"}
+              name: 'LVM thin-pool free pool data on {HOST.NAME}:[{#LV_FULL_NAME} is low (< $2 %, {ITEM.VALUE1} free)'
+              priority: WARNING
+              description: 'The free pool data of the LVM thin-pool is below `{$LVM.LV.POOL.FREE.WARN:"{#LV_FULL_NAME}"} ` and `{$LVM.LV.POOL.PFREE.WARN:"{#LV_FULL_NAME}"}` percent.'
+              dependencies:
+                - name: 'LVM thin-pool free pool data on {HOST.NAME}:[{#LV_FULL_NAME} is very low (< $2 %, {ITEM.VALUE1} free)'
+                  expression: |
+                    last(/Template App LVM active/lvm.lvs.value[{#LV_FULL_NAME},data_free,thin-pool]) < {$LVM.LV.POOL.FREE.CRIT:"{#LV_FULL_NAME}"} 
+                    
+                    and
+                    
+                    last(/Template App LVM active/lvm.lvs.value[{#LV_FULL_NAME},data_free_percent,thin-pool]) < {$LVM.LV.POOL.PFREE.CRIT:"{#LV_FULL_NAME}"}
+            - uuid: 4609ebee3b9b40fdbe1a4b41cd717d45
+              expression: |
+                last(/Template App LVM active/lvm.lvs.value[{#LV_FULL_NAME},data_free,thin-pool]) < {$LVM.LV.POOL.FREE.CRIT:"{#LV_FULL_NAME}"} 
+                
+                and
+                
+                last(/Template App LVM active/lvm.lvs.value[{#LV_FULL_NAME},data_free_percent,thin-pool]) < {$LVM.LV.POOL.PFREE.CRIT:"{#LV_FULL_NAME}"}
+              name: 'LVM thin-pool free pool data on {HOST.NAME}:[{#LV_FULL_NAME} is very low (< $2 %, {ITEM.VALUE1} free)'
+              priority: HIGH
+              description: 'The free pool data of the LVM thin-pool is below `{$LVM.LV.POOL.FREE.CRIT:"{#LV_FULL_NAME}"} ` and `{$LVM.LV.POOL.PFREE.CRIT:"{#LV_FULL_NAME}"}` percent.'
+          graph_prototypes:
+            - uuid: 036e3722573942efba2110f215c33de3
+              name: 'LVM usage of thin-pool LV {#LV_FULL_NAME}'
+              graph_items:
+                - color: C80000
+                  item:
+                    host: 'Template App LVM active'
+                    key: 'lvm.lvs.value[{#LV_FULL_NAME},lv_size,thin-pool]'
+                - sortorder: '1'
+                  color: 00C800
+                  item:
+                    host: 'Template App LVM active'
+                    key: 'lvm.lvs.value[{#LV_FULL_NAME},data_free,thin-pool]'
+                - sortorder: '2'
+                  color: 2774A4
+                  item:
+                    host: 'Template App LVM active'
+                    key: 'lvm.lvs.value[{#LV_FULL_NAME},data_used,thin-pool]'
+                - sortorder: '3'
+                  color: FF9999
+                  item:
+                    host: 'Template App LVM active'
+                    key: 'lvm.lvs.value[{#LV_FULL_NAME},lv_metadata_size,thin-pool]'
+                - sortorder: '4'
+                  color: 99FF99
+                  item:
+                    host: 'Template App LVM active'
+                    key: 'lvm.lvs.value[{#LV_FULL_NAME},metadata_free,thin-pool]'
+                - sortorder: '5'
+                  color: 9999FF
+                  item:
+                    host: 'Template App LVM active'
+                    key: 'lvm.lvs.value[{#LV_FULL_NAME},metadata_used,thin-pool]'
+            - uuid: 2ee4e8f3ae5b4773803c150fc3158dca
+              name: 'LVM usage of thin-pool LV {#LV_FULL_NAME} in %'
+              graph_items:
+                - color: 00C800
+                  item:
+                    host: 'Template App LVM active'
+                    key: 'lvm.lvs.value[{#LV_FULL_NAME},data_free_percent,thin-pool]'
+                - sortorder: '1'
+                  color: 2774A4
+                  item:
+                    host: 'Template App LVM active'
+                    key: 'lvm.lvs.value[{#LV_FULL_NAME},data_percent,thin-pool]'
+                - sortorder: '2'
+                  color: 99FF99
+                  item:
+                    host: 'Template App LVM active'
+                    key: 'lvm.lvs.value[{#LV_FULL_NAME},metadata_free_percent,thin-pool]'
+                - sortorder: '3'
+                  color: 9999FF
+                  item:
+                    host: 'Template App LVM active'
+                    key: 'lvm.lvs.value[{#LV_FULL_NAME},metadata_percent,thin-pool]'
+          master_item:
+            key: lvm.lvs
+          lld_macro_paths:
+            - lld_macro: '{#LV_FULL_NAME}'
+              path: $.lv_full_name
+            - lld_macro: '{#LV_NAME}'
+              path: $.lv_name
+            - lld_macro: '{#LV_ROLE}'
+              path: $.lv_role
+            - lld_macro: '{#LV_TYPE}'
+              path: $.segtype
+        - uuid: 5d99d4469aa54131bbcff07614fc335e
+          name: 'LVM logical thin snapshot volumes discovery'
+          type: DEPENDENT
+          key: 'lvm.lvs.discovery[thinsnapshot]'
+          delay: '0'
+          filter:
+            evaltype: AND
+            conditions:
+              - macro: '{#LV_ROLE}'
+                value: thinsnapshot
+                formulaid: A
+          lifetime: '0'
+          description: 'Low-Level discovery of a thin provisioned snapshot LVM logical volumes (LV)'
+          item_prototypes:
+            - uuid: ce71de244c5d41b5abf752ce1b006bc1
+              name: '{#LV_FULL_NAME}: Active state'
+              type: DEPENDENT
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},lv_active,thinsnapshot]'
+              delay: '0'
+              trends: '0'
+              value_type: CHAR
+              description: 'Active state of a thin provisioned LVM snapshot.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.lv_full_name=="{#LV_FULL_NAME}")].lv_active.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: lvm.lvs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+            - uuid: 3d490cbdfb2143d1be54145c84db9c72
+              name: '{#LV_FULL_NAME}: Total Size'
+              type: DEPENDENT
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},lv_size,thinsnapshot]'
+              delay: '0'
+              units: B
+              description: 'The size of a thin provisioned LVM snapshot.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.lv_full_name=="{#LV_FULL_NAME}")].lv_size.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: lvm.lvs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+            - uuid: b45dceaa84014394b2c428dd36beac8d
+              name: '{#LV_FULL_NAME}: Origin'
+              type: DEPENDENT
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},origin,thinsnapshot]'
+              delay: '0'
+              history: 7d
+              trends: '0'
+              value_type: CHAR
+              description: 'Origin device of a thin provisioned LVM snapshot.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.lv_full_name=="{#LV_FULL_NAME}")].origin.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: lvm.lvs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+            - uuid: 73730e9d663248e0894dfa59b367dd10
+              name: '{#LV_FULL_NAME}: Thin pool'
+              type: DEPENDENT
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},pool_lv,thinsnapshot]'
+              delay: '0'
+              trends: '0'
+              value_type: CHAR
+              description: 'The thin pool LV name of a thin provisioned LVM snapshot.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.lv_full_name=="{#LV_FULL_NAME}")].pool_lv.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: lvm.lvs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+          master_item:
+            key: lvm.lvs
+          lld_macro_paths:
+            - lld_macro: '{#LV_FULL_NAME}'
+              path: $.lv_full_name
+            - lld_macro: '{#LV_NAME}'
+              path: $.lv_name
+            - lld_macro: '{#LV_ROLE}'
+              path: $.lv_role
+            - lld_macro: '{#LV_TYPE}'
+              path: $.segtype
+        - uuid: 8dbb7b383b2e4df6b21dad8c0043cc1e
+          name: 'LVM logical thin volumes discovery'
+          type: DEPENDENT
+          key: 'lvm.lvs.discovery[thin]'
+          delay: '0'
+          filter:
+            conditions:
+              - macro: '{#LV_ROLE}'
+                value: '^public(,origin.*)?$'
+                formulaid: A
+              - macro: '{#LV_TYPE}'
+                value: ^thin$
+                formulaid: B
+          lifetime: 7d
+          description: 'Low-Level discovery of thin LVM logical volumes (LV)'
+          item_prototypes:
+            - uuid: 0a3bcc7b228e430d90220a8b1b3e6a3c
+              name: '{#LV_FULL_NAME}: Free data'
+              type: CALCULATED
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},data_free,thin]'
+              delay: '30'
+              units: B
+              params: 'last(//lvm.lvs.value[{#LV_FULL_NAME},lv_size,thin]) - last(//lvm.lvs.value[{#LV_FULL_NAME},data_used,thin])'
+              description: 'The free data of a thin provisioned LVM logical volume (LV) in bytes.'
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+            - uuid: ba85b3d419d24b24bf69d899d52aaff8
+              name: '{#LV_FULL_NAME}: Free data in %'
+              type: CALCULATED
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},data_free_percent,thin]'
+              delay: '300'
+              value_type: FLOAT
+              params: '100 - last(//lvm.lvs.value[{#LV_FULL_NAME},data_percent,thin])'
+              description: 'The percentage of free data of a thin provisioned LVM logical volume (LV).'
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+            - uuid: 2a3dcafa510146f791985034214ed953
+              name: '{#LV_FULL_NAME}: Allocated data of in %'
+              type: DEPENDENT
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},data_percent,thin]'
+              delay: '0'
+              value_type: FLOAT
+              description: 'The percentage of allocated data of a thin provisioned LVM logical volume (LV).'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.lv_full_name=="{#LV_FULL_NAME}")].data_percent.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: lvm.lvs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+            - uuid: 60768256f76648839f8935f6c43381d2
+              name: '{#LV_FULL_NAME}: Allocated data'
+              type: CALCULATED
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},data_used,thin]'
+              delay: '30'
+              units: B
+              params: 'last(//lvm.lvs.value[{#LV_FULL_NAME},lv_size,thin]) / 100 * last(//lvm.lvs.value[{#LV_FULL_NAME},data_percent,thin])'
+              description: 'The allocated data of a thin provisioned LVM logical volume (LV) in bytes.'
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+            - uuid: 6755b7f096cd464689415f95a029da9c
+              name: '{#LV_FULL_NAME}: Active state'
+              type: DEPENDENT
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},lv_active,thin]'
+              delay: '0'
+              trends: '0'
+              value_type: CHAR
+              description: 'Active state of a thin provisioned LVM logical volume (LV).'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.lv_full_name=="{#LV_FULL_NAME}")].lv_active.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: lvm.lvs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+              trigger_prototypes:
+                - uuid: 9a9e2a05b995419c9549e11f4b09a746
+                  expression: 'find(/Template App LVM active/lvm.lvs.value[{#LV_FULL_NAME},lv_active,thin],,"like","active")=0'
+                  name: 'LVM thin LV {#LV_FULL_NAME} is not active'
+                  opdata: 'Current state: {ITEM.LASTVALUE1}'
+                  priority: HIGH
+                  description: 'The thin provisioned LVM logical volume is not in state "active", which is most likely a sign of a problem.'
+            - uuid: 8846047d57fa4561995a0229d9c15638
+              name: '{#LV_FULL_NAME}: Size'
+              type: DEPENDENT
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},lv_size,thin]'
+              delay: '0'
+              units: B
+              description: 'The size of a thin provisioned LVM logical volume (LV).'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.lv_full_name=="{#LV_FULL_NAME}")].lv_size.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: lvm.lvs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+            - uuid: 3667150a27904eac852a9f4b47e5c1c1
+              name: '{#LV_FULL_NAME}: Thin pool'
+              type: DEPENDENT
+              key: 'lvm.lvs.value[{#LV_FULL_NAME},pool_lv,thin]'
+              delay: '0'
+              history: 7d
+              trends: '0'
+              value_type: CHAR
+              description: 'The thin pool LV name of a thin provisioned LVM logical volume (LV).'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.lv_full_name=="{#LV_FULL_NAME}")].pool_lv.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: lvm.lvs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-lv
+                  value: '{#LV_FULL_NAME}'
+                - tag: lvm-type
+                  value: '{#LV_TYPE}'
+          graph_prototypes:
+            - uuid: d1aef0bd2a95470b92529e1fedef2c2e
+              name: 'LVM usage of thin provisioned LV {#LV_FULL_NAME}'
+              graph_items:
+                - color: C80000
+                  item:
+                    host: 'Template App LVM active'
+                    key: 'lvm.lvs.value[{#LV_FULL_NAME},lv_size,thin]'
+                - sortorder: '1'
+                  color: 00C800
+                  item:
+                    host: 'Template App LVM active'
+                    key: 'lvm.lvs.value[{#LV_FULL_NAME},data_free,thin]'
+                - sortorder: '2'
+                  color: 2774A4
+                  item:
+                    host: 'Template App LVM active'
+                    key: 'lvm.lvs.value[{#LV_FULL_NAME},data_used,thin]'
+            - uuid: f3b89d2c5b344a138ef6ee431b9d6e41
+              name: 'LVM usage of thin provisioned LV {#LV_FULL_NAME} in %'
+              graph_items:
+                - color: 00C800
+                  item:
+                    host: 'Template App LVM active'
+                    key: 'lvm.lvs.value[{#LV_FULL_NAME},data_free_percent,thin]'
+                - sortorder: '1'
+                  color: 2774A4
+                  item:
+                    host: 'Template App LVM active'
+                    key: 'lvm.lvs.value[{#LV_FULL_NAME},data_percent,thin]'
+          master_item:
+            key: lvm.lvs
+          lld_macro_paths:
+            - lld_macro: '{#LV_FULL_NAME}'
+              path: $.lv_full_name
+            - lld_macro: '{#LV_NAME}'
+              path: $.lv_name
+            - lld_macro: '{#LV_ROLE}'
+              path: $.lv_role
+            - lld_macro: '{#LV_TYPE}'
+              path: $.segtype
+        - uuid: 6adfaf46ef0d4254adb8d469a7b08a6c
+          name: 'LVM physical volumes discovery'
+          type: DEPENDENT
+          key: lvm.pvs.discovery
+          delay: '0'
+          lifetime: 7d
+          description: 'Low-Level discovery of LVM physical volumes (PV)'
+          item_prototypes:
+            - uuid: da8d77e8b293441b9c802720f720884d
+              name: '{#PV_NAME}: Underlying device size'
+              type: DEPENDENT
+              key: 'lvm.pvs.value[{#PV_NAME},dev_size]'
+              delay: '0'
+              history: 30d
+              units: B
+              description: 'The size of the underlying device of an LVM physical volume (PV).'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.pv_name=="{#PV_NAME}")].dev_size.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: lvm.pvs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-pv
+                  value: '{#PV_NAME}'
+            - uuid: 2774dbbeae1143b0a0814909e7c13b9a
+              name: '{#PV_NAME}: Unallocated space'
+              type: DEPENDENT
+              key: 'lvm.pvs.value[{#PV_NAME},pv_free]'
+              delay: '0'
+              history: 30d
+              units: B
+              description: 'Unallocated (free) space on an LVM physical volume (PV).'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.pv_name=="{#PV_NAME}")].pv_free.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: lvm.pvs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-pv
+                  value: '{#PV_NAME}'
+            - uuid: 13dd2c448dfe4d42a4e46cf7b2ca6852
+              name: '{#PV_NAME}: Total Size'
+              type: DEPENDENT
+              key: 'lvm.pvs.value[{#PV_NAME},pv_size]'
+              delay: '0'
+              history: 30d
+              units: B
+              description: 'The size of an LVM physical volume (PV).'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.pv_name=="{#PV_NAME}")].pv_size.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: lvm.pvs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-pv
+                  value: '{#PV_NAME}'
+            - uuid: 34defb1365744c4082db1ce814c9796b
+              name: '{#PV_NAME}: Allocated space'
+              type: DEPENDENT
+              key: 'lvm.pvs.value[{#PV_NAME},pv_used]'
+              delay: '0'
+              history: 30d
+              units: B
+              description: 'Allocated (used) space on an LVM physical volume (PV).'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.pv_name=="{#PV_NAME}")].pv_used.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              master_item:
+                key: lvm.pvs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-pv
+                  value: '{#PV_NAME}'
+          graph_prototypes:
+            - uuid: 2d96cc69b72e4a9da8e39f53450516e5
+              name: 'LVM space usage on PV {#PV_NAME}'
+              graph_items:
+                - color: C80000
+                  item:
+                    host: 'Template App LVM active'
+                    key: 'lvm.pvs.value[{#PV_NAME},pv_size]'
+                - sortorder: '1'
+                  color: 00C800
+                  item:
+                    host: 'Template App LVM active'
+                    key: 'lvm.pvs.value[{#PV_NAME},pv_free]'
+                - sortorder: '2'
+                  color: 2774A4
+                  item:
+                    host: 'Template App LVM active'
+                    key: 'lvm.pvs.value[{#PV_NAME},pv_used]'
+                - sortorder: '3'
+                  color: DDDD00
+                  item:
+                    host: 'Template App LVM active'
+                    key: 'lvm.pvs.value[{#PV_NAME},dev_size]'
+          master_item:
+            key: lvm.pvs
+          lld_macro_paths:
+            - lld_macro: '{#PV_NAME}'
+              path: $.pv_name
+        - uuid: 216de335dc904f5f919cc5b81c0af130
+          name: 'LVM volume groups discovery'
+          type: DEPENDENT
+          key: lvm.vgs.discovery
+          delay: '0'
+          lifetime: 7d
+          description: 'Low-Level discovery of LVM volume groups (VG)'
+          item_prototypes:
+            - uuid: e3245ff1a76b450e8d8f38da28ff0280
+              name: '{#VG_NAME}: Number of LVs'
+              type: DEPENDENT
+              key: 'lvm.vgs.value[{#VG_NAME},lv_count]'
+              delay: '0'
+              description: 'Number of logical volumes (LVs) on an LVM volume group (VG).'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.vg_name=="{#VG_NAME}")].lv_count.first()'
+              master_item:
+                key: lvm.vgs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-vg
+                  value: '{#VG_NAME}'
+            - uuid: 512d3cbb2ca54c3cb3aa63a01de5ed80
+              name: '{#VG_NAME}: Number of PVs'
+              type: DEPENDENT
+              key: 'lvm.vgs.value[{#VG_NAME},pv_count]'
+              delay: '0'
+              description: 'Number of physical volumes (PVs) belonging to an LVM volume group (VG).'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.vg_name=="{#VG_NAME}")].pv_count.first()'
+              master_item:
+                key: lvm.vgs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-vg
+                  value: '{#VG_NAME}'
+            - uuid: fc778ba446dd495fa8245b63a62d983c
+              name: '{#VG_NAME}: Number of Snapshots'
+              type: DEPENDENT
+              key: 'lvm.vgs.value[{#VG_NAME},snap_count]'
+              delay: '0'
+              description: 'Number of snapshots on an LVM volume group (VG).'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.vg_name=="{#VG_NAME}")].snap_count.first()'
+              master_item:
+                key: lvm.vgs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-vg
+                  value: '{#VG_NAME}'
+            - uuid: 15f180953a9f4a01bf5fefa9e621e455
+              name: '{#VG_NAME}: Free space'
+              type: DEPENDENT
+              key: 'lvm.vgs.value[{#VG_NAME},vg_free]'
+              delay: '0'
+              units: B
+              description: 'Amount of free space of an LVM volume group (VG).'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.vg_name=="{#VG_NAME}")].vg_free.first()'
+              master_item:
+                key: lvm.vgs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-vg
+                  value: '{#VG_NAME}'
+            - uuid: 8d3036c4126449f09cc718537ddf0f1d
+              name: '{#VG_NAME}: Number of missing PVs'
+              type: DEPENDENT
+              key: 'lvm.vgs.value[{#VG_NAME},vg_missing_pv_count]'
+              delay: '0'
+              description: 'Number of missing physical volumes (PVs) on an LVM volume group (VG).'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.vg_name=="{#VG_NAME}")].vg_missing_pv_count.first()'
+              master_item:
+                key: lvm.vgs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-vg
+                  value: '{#VG_NAME}'
+              trigger_prototypes:
+                - uuid: 6ff1ce75fdc7497e8adc6f06a269d754
+                  expression: 'last(/Template App LVM active/lvm.vgs.value[{#VG_NAME},vg_missing_pv_count])>0'
+                  name: '{ITEM.VALUE1} LVM PVs missing on {HOST.NAME}:[{#VG_NAME}'
+                  opdata: 'Current state: {ITEM.LASTVALUE1}'
+                  priority: HIGH
+                  description: 'The LVM volume group misses one ore more physical volumes.'
+            - uuid: a3b8954e75b64b2cb826d0d6bfc54f86
+              name: '{#VG_NAME}: Total Size'
+              type: DEPENDENT
+              key: 'lvm.vgs.value[{#VG_NAME},vg_size]'
+              delay: '0'
+              units: B
+              description: 'The size of an LVM volume group (VG).'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[?(@.vg_name=="{#VG_NAME}")].vg_size.first()'
+              master_item:
+                key: lvm.vgs
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-vg
+                  value: '{#VG_NAME}'
+            - uuid: 7eb4003556194358af9030b496ac2e88
+              name: '{#VG_NAME}: Used space'
+              type: CALCULATED
+              key: 'lvm.vgs.value[{#VG_NAME},vg_used]'
+              delay: '300'
+              units: B
+              params: 'last(//lvm.vgs.value[{#VG_NAME},vg_size]) - last(//lvm.vgs.value[{#VG_NAME},vg_free])'
+              description: 'Amount of used space of an LVM volume group (VG).'
+              preprocessing:
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1d
+              tags:
+                - tag: component
+                  value: storage
+                - tag: lvm-vg
+                  value: '{#VG_NAME}'
+          graph_prototypes:
+            - uuid: 9c6619b4b19247a5b73266eefb9782b3
+              name: 'LVM LVs and snapshots on VG {#VG_NAME}'
+              graph_items:
+                - color: 00C800
+                  item:
+                    host: 'Template App LVM active'
+                    key: 'lvm.vgs.value[{#VG_NAME},lv_count]'
+                - sortorder: '1'
+                  color: 2774A4
+                  item:
+                    host: 'Template App LVM active'
+                    key: 'lvm.vgs.value[{#VG_NAME},snap_count]'
+            - uuid: 7ad1ff79d6d946a3928d656bd832398d
+              name: 'LVM space usage on VG {#VG_NAME}'
+              graph_items:
+                - color: C80000
+                  item:
+                    host: 'Template App LVM active'
+                    key: 'lvm.vgs.value[{#VG_NAME},vg_size]'
+                - sortorder: '1'
+                  color: 00C800
+                  item:
+                    host: 'Template App LVM active'
+                    key: 'lvm.vgs.value[{#VG_NAME},vg_free]'
+                - sortorder: '2'
+                  color: 2774A4
+                  item:
+                    host: 'Template App LVM active'
+                    key: 'lvm.vgs.value[{#VG_NAME},vg_used]'
+          master_item:
+            key: lvm.vgs
+          lld_macro_paths:
+            - lld_macro: '{#VG_NAME}'
+              path: $.vg_name
+      macros:
+        - macro: '{$LVM.LV.LVNAME.MATCHES}'
+          value: '^.*$'
+          description: 'Used for lvm discovery. Can be overridden on the host or linked template level.'
+        - macro: '{$LVM.LV.LVNAME.NOT_MATCHES}'
+          value: CHANGE_IF_NEEDED
+          description: 'Used in lvm discovery. Can be overridden on the host or linked template level if you need to filter out results.'
+        - macro: '{$LVM.LV.META.FREE.CRIT}'
+          value: 3G
+        - macro: '{$LVM.LV.META.FREE.WARN}'
+          value: 5G
+        - macro: '{$LVM.LV.META.PFREE.CRIT}'
+          value: '5'
+        - macro: '{$LVM.LV.META.PFREE.WARN}'
+          value: '10'
+        - macro: '{$LVM.LV.POOL.FREE.CRIT}'
+          value: 100G
+        - macro: '{$LVM.LV.POOL.FREE.WARN}'
+          value: 150G
+        - macro: '{$LVM.LV.POOL.PFREE.CRIT}'
+          value: '5'
+        - macro: '{$LVM.LV.POOL.PFREE.WARN}'
+          value: '10'
+        - macro: '{$LVM.LV.PVNAME.MATCHES}'
+          value: '.*'
+          description: 'Used for lvm discovery. Can be overridden on the host or linked template level.'
+        - macro: '{$LVM.LV.PVNAME.NOT_MATCHES}'
+          value: CHANGE_IF_NEEDED
+          description: 'Used in lvm discovery. Can be overridden on the host or linked template level if you need to filter out results.'
+        - macro: '{$LVM.LV.SNAPSHOT.FREE.CRIT}'
+          value: 100G
+        - macro: '{$LVM.LV.SNAPSHOT.FREE.WARN}'
+          value: 150G
+        - macro: '{$LVM.LV.SNAPSHOT.PFREE.CRIT}'
+          value: '5'
+        - macro: '{$LVM.LV.SNAPSHOT.PFREE.WARN}'
+          value: '10'
