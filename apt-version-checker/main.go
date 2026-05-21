@@ -60,7 +60,7 @@ func (p *packageVersion) MarshalJSON() ([]byte, error) {
 	return []byte(p.String()), nil
 }
 
-func (p packageVersion) MarshalText() (text []byte, err error) {
+func (p *packageVersion) MarshalText() (text []byte, err error) {
 	return []byte(p.String()), nil
 }
 
