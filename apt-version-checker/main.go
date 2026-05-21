@@ -7,22 +7,24 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/knqyf263/go-deb-version"
-	"github.com/stapelberg/godebiancontrol"
-	"github.com/ulikunitz/xz"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/knqyf263/go-deb-version"
+	"github.com/stapelberg/godebiancontrol"
+	"github.com/ulikunitz/xz"
 )
 
 var (
-	packageNames string
-	url          string
-	suite        string
-	component    string
-	architecture string
+	packageNames   string
+	url            string
+	suite          string
+	component      string
+	architecture   string
+	defaultVersion string
 )
 
 func FatalErr(err error, str string) {
@@ -115,6 +117,7 @@ func main() {
 	flag.StringVar(&suite, "suite", "", "the distribution is generally a suite name")
 	flag.StringVar(&component, "component", "main", "the component name")
 	flag.StringVar(&architecture, "architecture", "amd64", "package architecture")
+	flag.StringVar(&defaultVersion, "default", "", "default version if not found")
 	flag.Parse()
 	log.SetOutput(os.Stderr)
 
@@ -165,6 +168,16 @@ func main() {
 				}
 			} else {
 				versions[packageName] = packageVersion{Version: current}
+			}
+		}
+	}
+	if defaultVersion != "" {
+		defVer, err := version.NewVersion(defaultVersion)
+		FatalErr(err, "Invalid default package version")
+		for _, p := range packages {
+			_, ok := versions[p]
+			if !ok {
+				versions[p] = packageVersion{Version: defVer}
 			}
 		}
 	}
