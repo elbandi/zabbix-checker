@@ -15,9 +15,10 @@ import (
 
 var (
 	addressFlag = cli.StringFlag{
-		Name:    "address",
-		Usage:   "Address",
-		EnvVars: []string{"ADDRESS"},
+		Name:     "address",
+		Usage:    "Address",
+		Required: true,
+		EnvVars:  []string{"ADDRESS"},
 		Action: func(ctx *cli.Context, v string) error {
 			if len(v) == 0 {
 				return cli.Exit("Flag 'address' cannot be empty", 1)
