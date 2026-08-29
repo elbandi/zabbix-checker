@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -35,6 +36,17 @@ var (
 			return nil
 		},
 	}
+	privateKeyFileFlag = cli.StringFlag{
+		Name:    "private_key_file",
+		Usage:   "Private key file",
+		EnvVars: []string{"PRIVATE_KEY_FILE"},
+		Action: func(ctx *cli.Context, v string) error {
+			if len(v) == 0 {
+				return cli.Exit("Flag 'private_key_file' cannot be empty", 1)
+			}
+			return nil
+		},
+	}
 )
 
 var walletCommand = cli.Command{
@@ -43,6 +55,7 @@ var walletCommand = cli.Command{
 	Flags: []cli.Flag{
 		&addressFlag,
 		&privateKeyFlag,
+		&privateKeyFileFlag,
 	},
 	Action: cmdWallet,
 }
@@ -56,7 +69,15 @@ func cmdWallet(ctx *cli.Context) error {
 		return err
 	}
 
-	pk, err := crypto.HexToECDSA(ctx.String(privateKeyFlag.Name))
+	var pk *ecdsa.PrivateKey
+	if ctx.IsSet(privateKeyFlag.Name) {
+		pk, err = crypto.HexToECDSA(ctx.String(privateKeyFlag.Name))
+	} else if ctx.IsSet(privateKeyFileFlag.Name) {
+		pk, err = crypto.LoadECDSA(ctx.String(privateKeyFileFlag.Name))
+	} else {
+		return cli.Exit("Either 'private_key' or 'private_key_file' must be specified", 1)
+	}
+
 	if err != nil {
 		return fmt.Errorf("failed to parse private key: %v", err)
 	}
